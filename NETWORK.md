@@ -12,6 +12,8 @@ identifiers are sent to opencode or any third party.
 | Update check on TUI startup | npm registry, `api.github.com`, `formulae.brew.sh`, `community.chocolatey.org`, `raw.githubusercontent.com` | Off by default. Set `OPENCODE_ENABLE_AUTOUPDATE=1` or `"autoupdate": true` / `"notify"` in config to opt in. `opencode upgrade` still works on demand. |
 | Web UI proxy fallback | `app.opencode.ai` | Removed. Only the UI bundled into the binary is served; otherwise the server returns 404. |
 | Session sharing (uploads full transcript, tool output and file diffs) | `opncd.ai`, `console.opencode.ai` | Hard-disabled. `/share` fails with a clear error instead of uploading. |
+| Sentry crash reporting + error-report button | `sentry.io` | Removed from the web app and the desktop app, along with the `@sentry/*` dependencies. |
+| Desktop auto-update poll (every 10 min) | electron-updater release feed | Off unless `OPENCODE_ENABLE_AUTOUPDATE=1`. |
 | Attribution headers on inference requests (`HTTP-Referer: https://opencode.ai/`, `X-Title: opencode`, `X-Source: opencode`, `X-BILLING-INVOKE-ORIGIN: OpenCode`, `X-Cerebras-3rd-Party-Integration: opencode`) | openrouter, llmgateway, nvidia, vercel, zenmux, kilo, cerebras | Removed. These told the gateway which tool the traffic came from; they are not needed for inference. |
 
 ## Still present, and why
@@ -44,10 +46,10 @@ These only fire when you explicitly ask for them:
 
 ## Verifying
 
-There is no analytics SDK in the tree — no PostHog, Sentry, Segment, Amplitude
-or similar. To re-audit after a rebase:
+There is no analytics or crash-reporting SDK left in the tree — no PostHog,
+Sentry, Segment, Amplitude or similar. To re-audit after a rebase:
 
 ```sh
-rg -n 'opencode\.ai|opncd\.ai|posthog|sentry|segment|amplitude|mixpanel' \
-  packages/core/src packages/opencode/src packages/cli/src packages/tui/src
+rg -ni 'opencode\.ai|opncd\.ai|posthog|sentry|segment|amplitude|mixpanel' \
+  packages/*/src
 ```

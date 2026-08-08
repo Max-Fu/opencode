@@ -20,7 +20,10 @@ import { ProviderV2 } from "@opencode-ai/core/provider"
 import { ModelV2 } from "@opencode-ai/core/model"
 import { EventV2 } from "@opencode-ai/core/event"
 
-const disabled = process.env["OPENCODE_DISABLE_SHARE"] === "true" || process.env["OPENCODE_DISABLE_SHARE"] === "1"
+// Sharing uploads the full session transcript (messages, tool output, file
+// diffs) to a hosted service. This build never does that, so it is disabled
+// unconditionally rather than behind an env var.
+const disabled: boolean = true
 
 export type Api = {
   create: string
@@ -308,7 +311,7 @@ const layer = Layer.effect(
     })
 
     const create = Effect.fn("ShareNext.create")(function* (sessionID: SessionID) {
-      if (disabled) return { id: "", url: "", secret: "" }
+      if (disabled) return yield* Effect.fail(new Error("Session sharing is disabled in this build"))
       yield* Effect.logInfo("creating share", { sessionID: sessionID })
       const req = yield* request()
       const result = yield* HttpClientRequest.post(`${req.baseUrl}${req.api.create}`).pipe(

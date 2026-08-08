@@ -6,8 +6,12 @@ import { InstallationVersion } from "@opencode-ai/core/installation/version"
 import { GlobalBus } from "@/bus/global"
 
 export async function upgrade() {
+  if (Flag.OPENCODE_DISABLE_AUTOUPDATE) return
   const config = await AppRuntime.runPromise(Config.Service.use((cfg) => cfg.getGlobal()))
-  if (config.autoupdate === false || Flag.OPENCODE_DISABLE_AUTOUPDATE) return
+  // Opt-in only. Update checks contact a release index (npm, GitHub, brew,
+  // scoop, chocolatey) and leak the fact that opencode is running, so they stay
+  // off unless the user explicitly turns them on.
+  if (!Flag.OPENCODE_ENABLE_AUTOUPDATE && config.autoupdate !== true && config.autoupdate !== "notify") return
   const method = await Installation.method()
   const latest = await Installation.latest(method).catch(() => {})
   if (!latest) return

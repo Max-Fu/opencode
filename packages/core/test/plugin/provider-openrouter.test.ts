@@ -25,7 +25,7 @@ describe("OpenRouterPlugin", () => {
     Effect.sync(() => expect(ProviderPlugins.map((item) => item.id)).toContain(PluginV2.ID.make("openrouter"))),
   )
 
-  it.effect("applies legacy referer headers only to openrouter", () =>
+  it.effect("does not add opencode attribution headers", () =>
     Effect.gen(function* () {
       const catalog = yield* Catalog.Service
       yield* catalog.transform((catalog) => {
@@ -33,16 +33,10 @@ describe("OpenRouterPlugin", () => {
           provider.api = { type: "aisdk", package: "@openrouter/ai-sdk-provider" }
           provider.request = { headers: { Existing: "value" }, body: {} }
         })
-        catalog.provider.update(ProviderV2.ID.make("nvidia"), () => {})
       })
       yield* addPlugin()
 
-      expect((yield* catalog.provider.get(ProviderV2.ID.openrouter))?.request.headers).toEqual({
-        Existing: "value",
-        "HTTP-Referer": "https://opencode.ai/",
-        "X-Title": "opencode",
-      })
-      expect((yield* catalog.provider.get(ProviderV2.ID.make("nvidia")))?.request.headers).toEqual({})
+      expect((yield* catalog.provider.get(ProviderV2.ID.openrouter))?.request.headers).toEqual({ Existing: "value" })
     }),
   )
 

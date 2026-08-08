@@ -456,44 +456,22 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
     llmgateway: () =>
       Effect.succeed({
         autoload: false,
-        options: {
-          headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
-            "X-Source": "opencode",
-          },
-        },
+        options: {},
       }),
     openrouter: () =>
       Effect.succeed({
         autoload: false,
-        options: {
-          headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
-          },
-        },
+        options: {},
       }),
     nvidia: (provider) =>
       Effect.succeed({
         autoload: provider.source === "config",
-        options: {
-          headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
-            "X-BILLING-INVOKE-ORIGIN": "OpenCode",
-          },
-        },
+        options: {},
       }),
     vercel: () =>
       Effect.succeed({
         autoload: false,
-        options: {
-          headers: {
-            "http-referer": "https://opencode.ai/",
-            "x-title": "opencode",
-          },
-        },
+        options: {},
       }),
     "google-vertex": Effect.fnUntraced(function* (provider: Info) {
       const env = yield* dep.env()
@@ -594,12 +572,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
     zenmux: () =>
       Effect.succeed({
         autoload: false,
-        options: {
-          headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
-          },
-        },
+        options: {},
       }),
     gitlab: Effect.fnUntraced(function* (input: Info) {
       const {
@@ -843,21 +816,12 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
     cerebras: () =>
       Effect.succeed({
         autoload: false,
-        options: {
-          headers: {
-            "X-Cerebras-3rd-Party-Integration": "opencode",
-          },
-        },
+        options: {},
       }),
     kilo: () =>
       Effect.succeed({
         autoload: false,
-        options: {
-          headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
-          },
-        },
+        options: {},
       }),
     "snowflake-cortex": Effect.fnUntraced(function* (input: Info) {
       const env = yield* dep.env()

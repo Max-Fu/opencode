@@ -31,7 +31,7 @@ void mock.module("@ai-sdk/cerebras", () => ({
 }))
 
 describe("CerebrasPlugin", () => {
-  it.effect("applies the legacy integration header", () =>
+  it.effect("does not add opencode attribution headers", () =>
     Effect.gen(function* () {
       const catalog = yield* Catalog.Service
       yield* catalog.transform((catalog) => {
@@ -41,19 +41,7 @@ describe("CerebrasPlugin", () => {
         })
       })
       yield* addPlugin()
-      expect((yield* catalog.provider.get(ProviderV2.ID.make("cerebras")))?.request.headers).toEqual({
-        Existing: "1",
-        "X-Cerebras-3rd-Party-Integration": "opencode",
-      })
-    }),
-  )
-
-  it.effect("ignores non-Cerebras providers", () =>
-    Effect.gen(function* () {
-      const catalog = yield* Catalog.Service
-      yield* catalog.transform((catalog) => catalog.provider.update(ProviderV2.ID.make("groq"), () => {}))
-      yield* addPlugin()
-      expect((yield* catalog.provider.get(ProviderV2.ID.make("groq")))?.request.headers).toEqual({})
+      expect((yield* catalog.provider.get(ProviderV2.ID.make("cerebras")))?.request.headers).toEqual({ Existing: "1" })
     }),
   )
 

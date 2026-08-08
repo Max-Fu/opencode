@@ -26,6 +26,8 @@ const layer = Layer.effect(
     const share = Effect.fn("SessionShare.share")(function* (sessionID: SessionID) {
       const conf = yield* cfg.get()
       if (conf.share === "disabled") throw new Error("Sharing is disabled in configuration")
+      // shareNext.create fails outright in this build; sharing would upload the
+      // whole transcript to a hosted service.
       const result = yield* shareNext.create(sessionID)
       yield* session.setShare({ sessionID, share: { url: result.url } })
       return result

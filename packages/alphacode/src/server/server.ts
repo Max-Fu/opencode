@@ -13,6 +13,7 @@ import { WebSocketTracker } from "./routes/instance/httpapi/websocket-tracker"
 import { PublicApi } from "./routes/instance/httpapi/public"
 import type { CorsOptions } from "@alphacode-ai/server/cors"
 import { lazy } from "@/util/lazy"
+import { Flag } from "@alphacode-ai/core/flag/flag"
 
 // @ts-ignore This global is needed to prevent ai-sdk from logging warnings to stdout https://github.com/vercel/ai/blob/2dc67e0ef538307f21368db32d5a12345d98831b/packages/ai/src/logger/log-warnings.ts#L85
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -91,10 +92,8 @@ const LOOPBACK = new Set(["127.0.0.1", "localhost", "::1", "::ffff:127.0.0.1"])
  */
 export function assertNetworkBindIsAuthenticated(hostname: string) {
   if (LOOPBACK.has(hostname)) return
-  if (process.env["ALPHACODE_SERVER_PASSWORD"]) return
-  if (process.env["ALPHACODE_ALLOW_INSECURE_BIND"] === "1" || process.env["ALPHACODE_ALLOW_INSECURE_BIND"] === "true") {
-    return
-  }
+  if (Flag.ALPHACODE_SERVER_PASSWORD) return
+  if (Flag.ALPHACODE_ALLOW_INSECURE_BIND) return
   throw new Error(
     `Refusing to listen on ${hostname} without authentication. The instance API exposes sessions, file access ` +
       `and terminals. Set ALPHACODE_SERVER_PASSWORD to require a password, or set ALPHACODE_ALLOW_INSECURE_BIND=1 ` +

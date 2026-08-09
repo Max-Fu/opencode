@@ -1276,33 +1276,28 @@ it.instance(
 )
 
 it.instance(
-  "hosted nvidia provider adds billing origin header",
+  "hosted nvidia provider adds no attribution headers",
   Effect.gen(function* () {
     const providers = yield* list
-    expect(providers[ProviderV2.ID.make("nvidia")].options.headers).toEqual({
-      "HTTP-Referer": "https://alphacode.ai/",
-      "X-Title": "alphacode",
-      "X-BILLING-INVOKE-ORIGIN": "AlphaCode",
-    })
+    // Upstream tagged every NVIDIA request with HTTP-Referer, X-Title and
+    // X-BILLING-INVOKE-ORIGIN. None of that is needed for inference, so the
+    // provider now contributes no headers at all.
+    expect(providers[ProviderV2.ID.make("nvidia")].options.headers).toBeUndefined()
   }),
   { config: { provider: { nvidia: { options: { apiKey: "test-api-key" } } } } },
 )
 
 it.instance(
-  "custom nvidia baseURL adds billing origin header",
+  "custom nvidia baseURL adds no attribution headers",
   Effect.gen(function* () {
     const providers = yield* list
-    expect(providers[ProviderV2.ID.make("nvidia")].options.headers).toEqual({
-      "HTTP-Referer": "https://alphacode.ai/",
-      "X-Title": "alphacode",
-      "X-BILLING-INVOKE-ORIGIN": "AlphaCode",
-    })
+    expect(providers[ProviderV2.ID.make("nvidia")].options.headers).toBeUndefined()
   }),
   { config: { provider: { nvidia: { options: { apiKey: "test-api-key", baseURL: "http://localhost:8000/v1" } } } } },
 )
 
 it.instance(
-  "explicit nvidia billing origin header is preserved",
+  "explicit nvidia billing origin header from user config is preserved",
   Effect.gen(function* () {
     const providers = yield* list
     expect(providers[ProviderV2.ID.make("nvidia")].options.headers["X-BILLING-INVOKE-ORIGIN"]).toBe("CustomOrigin")

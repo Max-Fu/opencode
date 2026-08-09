@@ -293,7 +293,10 @@ describe("HttpApi Server.listen", () => {
       return true
     }) as typeof process.stderr.write
     try {
-      const response = await Server.Default().app.request("/status")
+      // "/status" is not a route; it used to answer 200 only because the UI
+      // fallback proxied unmatched paths to a hosted web UI. That proxy is gone,
+      // so use a real endpoint - this test is about log output, not routing.
+      const response = await Server.Default().app.request("/config")
       expect(response.status).toBe(200)
     } finally {
       process.stderr.write = original

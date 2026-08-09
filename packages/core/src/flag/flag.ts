@@ -52,6 +52,8 @@ export const Flag = {
   ALPHACODE_FAKE_VCS: process.env["ALPHACODE_FAKE_VCS"],
   ALPHACODE_SERVER_PASSWORD: process.env["ALPHACODE_SERVER_PASSWORD"],
   ALPHACODE_SERVER_USERNAME: process.env["ALPHACODE_SERVER_USERNAME"],
+  // Escape hatch for binding off-loopback without a password on a trusted network.
+  ALPHACODE_ALLOW_INSECURE_BIND: truthy("ALPHACODE_ALLOW_INSECURE_BIND"),
   ALPHACODE_DISABLE_FFF: fff === undefined ? process.platform === "win32" : truthy("ALPHACODE_DISABLE_FFF"),
 
   // Experimental

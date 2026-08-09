@@ -1,19 +1,20 @@
 import { afterEach, describe, expect, test } from "bun:test"
+import { Flag } from "@alphacode-ai/core/flag/flag"
 import { assertNetworkBindIsAuthenticated } from "../../src/server/server"
 
-const KEYS = ["ALPHACODE_SERVER_PASSWORD", "ALPHACODE_ALLOW_INSECURE_BIND"] as const
-const original = Object.fromEntries(KEYS.map((key) => [key, process.env[key]]))
+const original = {
+  password: Flag.ALPHACODE_SERVER_PASSWORD,
+  insecure: Flag.ALPHACODE_ALLOW_INSECURE_BIND,
+}
 
 afterEach(() => {
-  for (const key of KEYS) {
-    const value = original[key]
-    if (value === undefined) delete process.env[key]
-    else process.env[key] = value
-  }
+  Flag.ALPHACODE_SERVER_PASSWORD = original.password
+  Flag.ALPHACODE_ALLOW_INSECURE_BIND = original.insecure
 })
 
 function clear() {
-  for (const key of KEYS) delete process.env[key]
+  Flag.ALPHACODE_SERVER_PASSWORD = undefined
+  Flag.ALPHACODE_ALLOW_INSECURE_BIND = false
 }
 
 describe("assertNetworkBindIsAuthenticated", () => {
@@ -33,19 +34,19 @@ describe("assertNetworkBindIsAuthenticated", () => {
 
   test("allows a non-loopback bind once a password is configured", () => {
     clear()
-    process.env.ALPHACODE_SERVER_PASSWORD = "hunter2"
+    Flag.ALPHACODE_SERVER_PASSWORD = "hunter2"
     expect(() => assertNetworkBindIsAuthenticated("0.0.0.0")).not.toThrow()
   })
 
   test("allows an explicit opt-out for trusted networks", () => {
     clear()
-    process.env.ALPHACODE_ALLOW_INSECURE_BIND = "1"
+    Flag.ALPHACODE_ALLOW_INSECURE_BIND = true
     expect(() => assertNetworkBindIsAuthenticated("0.0.0.0")).not.toThrow()
   })
 
   test("an empty password does not count as configured", () => {
     clear()
-    process.env.ALPHACODE_SERVER_PASSWORD = ""
+    Flag.ALPHACODE_SERVER_PASSWORD = ""
     expect(() => assertNetworkBindIsAuthenticated("0.0.0.0")).toThrow(/without authentication/)
   })
 })

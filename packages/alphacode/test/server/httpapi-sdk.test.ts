@@ -397,7 +397,12 @@ describe("HttpApi SDK", () => {
         const url = new URL(request!.url)
 
         expect(found.response.status).toBe(200)
-        expect(found.data).toMatchObject({ data: [{ path: "hello.txt", type: "file" }] })
+        // Assert presence rather than an exact result set: this test is about
+        // directory/workspace routing, and the fuzzy file search also matches
+        // other files that happen to sit in the temp project.
+        expect(found.data?.data).toEqual(
+          expect.arrayContaining([expect.objectContaining({ path: "hello.txt", type: "file" })]),
+        )
         expect(url.searchParams.get("directory")).toBe(directory)
         expect(url.searchParams.get("workspace")).toBe(workspaceID)
         expect(url.searchParams.get("location[directory]")).toBe(directory)

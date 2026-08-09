@@ -231,23 +231,27 @@ const layer = Layer.effect(
     const directory = yield* CurrentWorkingDirectory
     const npm = yield* Npm.Service
     const data = yield* loadState({ directory })
-    const deps = yield* Effect.forEach(
-      data.dirs,
-      (dir) =>
-        npm
-          .install(dir, {
-            add: [
-              {
-                name: "@alphacode-ai/plugin",
-                version: InstallationLocal ? undefined : InstallationVersion,
-              },
-            ],
-          })
-          .pipe(Effect.forkScoped),
-      {
-        concurrency: "unbounded",
-      },
-    )
+    // Opt-in; see ALPHACODE_ENABLE_PLUGIN_DEP_INSTALL. Skipped entirely by
+    // default so startup makes no registry request.
+    const deps = Flag.ALPHACODE_ENABLE_PLUGIN_DEP_INSTALL
+      ? yield* Effect.forEach(
+          data.dirs,
+          (dir) =>
+            npm
+              .install(dir, {
+                add: [
+                  {
+                    name: "@alphacode-ai/plugin",
+                    version: InstallationLocal ? undefined : InstallationVersion,
+                  },
+                ],
+              })
+              .pipe(Effect.forkScoped),
+          {
+            concurrency: "unbounded",
+          },
+        )
+      : []
 
     const get = Effect.fn("TuiConfig.get")(() => Effect.succeed(data.config))
     const pluginOrigins = Effect.fn("TuiConfig.pluginOrigins")(() => Effect.succeed(data.pluginOrigins))

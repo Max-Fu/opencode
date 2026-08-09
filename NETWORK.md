@@ -22,6 +22,7 @@ fork does not operate replacements for any of them.
 | Web search tool sending the model's queries to third-party search backends | `mcp.exa.ai`, `search.parallel.ai` | Opt-in only now. See "Web search" below — this was the largest content leak. |
 | GitHub comment social card embedding the base64 session title in an image URL | `social-cards.sst.dev` | Removed from the GitHub Action, the `github` CLI handler, and the enterprise share page's `og:image`/`twitter:image`. |
 | System prompts instructing the model to WebFetch the vendor docs site whenever asked about the tool | `opencode.ai/docs` | Instruction removed from the anthropic, default and meta prompts. |
+| Background npm install of the plugin SDK on every start, carrying the exact running version | `registry.npmjs.org` | Opt-in via `ALPHACODE_ENABLE_PLUGIN_DEP_INSTALL`. The call is skipped entirely, not just given an empty package list, because arborist still rebuilds the tree from disk otherwise. |
 | Attribution headers on inference requests (`HTTP-Referer: https://opencode.ai/`, `X-Title: opencode`, `X-Source: opencode`, `X-BILLING-INVOKE-ORIGIN: OpenCode`, `X-Cerebras-3rd-Party-Integration: opencode`) | openrouter, llmgateway, nvidia, vercel, zenmux, kilo, cerebras | Removed. These told the gateway which tool the traffic came from; they are not needed for inference. |
 
 ## Still present, and why
@@ -99,6 +100,30 @@ ever chosen on the user's behalf.
 - **Provider auth plugins** (Azure, Cloudflare, DigitalOcean, Snowflake, xAI,
   Copilot, Codex, Modal, GitLab, Poe). Each only contacts its own provider, and
   only during an explicit login.
+
+## Verified by running it
+
+The static audit above was checked against the running CLI. Method: a `--preload`
+shim wrapping `globalThis.fetch` and `node:net`/`tls`/`http`/`https` to log every
+request with a stack trace, plus `strace -f -e trace=connect` to catch anything
+that skips those (native fetchers, child processes), with `HOME` pointed at a
+throwaway directory so no cached catalog or credential could mask a request.
+
+| Run | App-level HTTP | External sockets |
+| --- | --- | --- |
+| `alphacode models`, defaults | none | none |
+| `alphacode run "say hi"`, defaults | none | none |
+| `alphacode models` with `ALPHACODE_ENABLE_MODELS_FETCH=1` | `https://models.dev/api.json` | as expected |
+
+The third row is the control: it proves the instrumentation actually observes
+requests, so the empty first two rows mean silence rather than a blind spot.
+An earlier version of this test reported a false negative because the command
+had exited with a usage error before doing any work — always confirm the
+positive control fires before trusting a clean run.
+
+Two findings came out of running it rather than reading it: the per-start npm
+request for the plugin SDK, and three third-party npm packages the rename had
+broken.
 
 ## Rebrand notes
 

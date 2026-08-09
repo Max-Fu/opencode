@@ -23,6 +23,11 @@ export const Flag = {
   // Update checks are opt-in: alphacode never contacts a release index unless
   // the user explicitly asks for it.
   ALPHACODE_ENABLE_AUTOUPDATE: truthy("ALPHACODE_ENABLE_AUTOUPDATE"),
+  // Installing the plugin SDK into a project's plugin directory is an
+  // editor-convenience feature (it makes types resolve when authoring plugins).
+  // It also fires a registry request carrying the exact version on every start,
+  // so it is opt-in.
+  ALPHACODE_ENABLE_PLUGIN_DEP_INSTALL: truthy("ALPHACODE_ENABLE_PLUGIN_DEP_INSTALL"),
   ALPHACODE_DISABLE_AUTOUPDATE: truthy("ALPHACODE_DISABLE_AUTOUPDATE"),
   ALPHACODE_ALWAYS_NOTIFY_UPDATE: truthy("ALPHACODE_ALWAYS_NOTIFY_UPDATE"),
   ALPHACODE_DISABLE_PRUNE: truthy("ALPHACODE_DISABLE_PRUNE"),

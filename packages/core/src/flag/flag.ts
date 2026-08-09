@@ -23,6 +23,15 @@ export const Flag = {
   // Update checks are opt-in: alphacode never contacts a release index unless
   // the user explicitly asks for it.
   ALPHACODE_ENABLE_AUTOUPDATE: truthy("ALPHACODE_ENABLE_AUTOUPDATE"),
+  // Session-correlation headers (X-Session-Id, x-session-affinity,
+  // x-parent-session-id) let a provider group every request in a session and
+  // link subagent trees. Some gateways use the affinity hint to route to a warm
+  // prompt cache, so this is a real tradeoff - but it is metadata inference does
+  // not need, so it ships off.
+  ALPHACODE_SEND_SESSION_HEADERS: truthy("ALPHACODE_SEND_SESSION_HEADERS"),
+  // Whether provider requests advertise the client name and exact version in
+  // User-Agent. A neutral string is sent otherwise.
+  ALPHACODE_SEND_CLIENT_UA: truthy("ALPHACODE_SEND_CLIENT_UA"),
   // Installing the plugin SDK into a project's plugin directory is an
   // editor-convenience feature (it makes types resolve when authoring plugins).
   // It also fires a registry request carrying the exact version on every start,

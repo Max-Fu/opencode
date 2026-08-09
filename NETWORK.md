@@ -162,6 +162,57 @@ the built binary:
 
 Covered by `packages/alphacode/test/server/insecure-bind.test.ts` (5 tests).
 
+## End-to-end test against a fake model server
+
+Credentials are not needed to prove "it talks to the model and nothing else". A
+stub OpenAI-compatible server (`scratchpad/fakellm.py`) logs every request it
+receives - method, path, headers, full body - and returns a fixed reply. The
+compiled binary was pointed at it with a config-file provider
+(`@ai-sdk/openai-compatible`, `baseURL: http://127.0.0.1:<port>/v1`) and run with
+`alphacode run "say hi"` under `strace -f -e trace=connect`.
+
+Every header the CLI sends to the model endpoint:
+
+```
+accept, accept-encoding, connection, content-type, content-length, host
+authorization: Bearer <your api key>
+user-agent: http-client ai-sdk/provider-utils/4.0.23 runtime/bun/1.3.14
+```
+
+Absent: `x-session-id`, `x-session-affinity`, `x-parent-session-id`,
+`http-referer`, `x-title`, `x-source`, and the `x-alphacode-*` set.
+
+Tools offered to the model: `bash`, `edit`, `glob`, `grep`, `read`, `skill`,
+`task`, `todowrite`, `webfetch`, `write`. Note `websearch` is **not** there,
+confirming the gating above from the model's own point of view.
+
+The request body carries `messages` (a ~19KB system prompt plus your message),
+`tools`, `model`, `max_tokens`, `stream`. The system prompt includes the working
+directory, platform, and the names/paths/descriptions of discovered skills -
+context the agent needs, and it goes to the model only.
+
+### Two things this test found
+
+**Session-correlation headers.** Every non-vendor provider was receiving
+`X-Session-Id`, `x-session-affinity` and `x-parent-session-id`, letting any
+provider group all requests in a session and link subagent trees. Some gateways
+use the affinity hint to route to a warm prompt cache, so it is now behind
+`ALPHACODE_SEND_SESSION_HEADERS` (off) rather than deleted.
+
+**Client User-Agent.** Requests advertised `alphacode/<exact version>`. A neutral
+`http-client` is sent instead; `ALPHACODE_SEND_CLIENT_UA=1` restores the real one.
+
+### Socket-level result
+
+A full session opened exactly two kinds of TCP connection: the fake model
+endpoint, and `github.com` via the proxy. The latter is a `git clone --depth 100`
+of `https://github.com/Effect-TS/effect-smol`, triggered by the `references`
+block in this repository's own `.alphacode/alphacode.jsonc`. It is a download
+driven by project config, not a default of the tool and not an upload - the only
+thing disclosed is that someone cloned a public repo. A project without a
+`references` entry makes no such request. Worth knowing that the feature exists:
+a config entry can cause an automatic clone at session start.
+
 ## Rebrand notes
 
 The `opencode` → `alphacode` rename rewrote brand strings wholesale, including

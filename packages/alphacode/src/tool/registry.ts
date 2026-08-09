@@ -55,8 +55,15 @@ import { MCP } from "@/mcp"
 import { PermissionV1 } from "@alphacode-ai/core/v1/permission"
 import { McpCatalog } from "@/mcp/catalog"
 
-export function webSearchEnabled(providerID: ProviderV2.ID, flags = { exa: false, parallel: false }) {
-  return providerID === ProviderV2.ID.alphacode || flags.exa || flags.parallel
+/**
+ * Web search runs against Exa or Parallel, not against the model provider, so
+ * every query leaves for a third party. It is therefore opt-in only. Upstream
+ * additionally auto-enabled it whenever the vendor gateway was the provider;
+ * that shortcut is deliberately gone, because the queries still went to Exa or
+ * Parallel rather than to the gateway.
+ */
+export function webSearchEnabled(_providerID: ProviderV2.ID, flags = { exa: false, parallel: false }) {
+  return flags.exa || flags.parallel
 }
 
 type TaskDef = Tool.InferDef<typeof TaskTool>

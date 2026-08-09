@@ -19,6 +19,9 @@ fork does not operate replacements for any of them.
 | Session sharing (uploads full transcript, tool output and file diffs) | `opncd.ai`, `console.opencode.ai` | Hard-disabled. `/share` fails with a clear error instead of uploading. |
 | Sentry crash reporting + error-report button | `sentry.io` | Removed from the web app and the desktop app, along with the `@sentry/*` dependencies. |
 | Desktop auto-update poll (every 10 min) | electron-updater release feed | Off unless `ALPHACODE_ENABLE_AUTOUPDATE=1`. |
+| Web search tool sending the model's queries to third-party search backends | `mcp.exa.ai`, `search.parallel.ai` | Opt-in only now. See "Web search" below — this was the largest content leak. |
+| GitHub comment social card embedding the base64 session title in an image URL | `social-cards.sst.dev` | Removed from the GitHub Action, the `github` CLI handler, and the enterprise share page's `og:image`/`twitter:image`. |
+| System prompts instructing the model to WebFetch the vendor docs site whenever asked about the tool | `opencode.ai/docs` | Instruction removed from the anthropic, default and meta prompts. |
 | Attribution headers on inference requests (`HTTP-Referer: https://opencode.ai/`, `X-Title: opencode`, `X-Source: opencode`, `X-BILLING-INVOKE-ORIGIN: OpenCode`, `X-Cerebras-3rd-Party-Integration: opencode`) | openrouter, llmgateway, nvidia, vercel, zenmux, kilo, cerebras | Removed. These told the gateway which tool the traffic came from; they are not needed for inference. |
 
 ## Still present, and why
@@ -50,6 +53,53 @@ These only fire when you explicitly ask for them:
   Cloudflare provider requests, where the gateway expects a client identifier.
   Those go to your provider, not to this project.
 
+## Web search
+
+This deserves its own note, because it was the one path that shipped **user
+content** off-box by default rather than just metadata.
+
+The `websearch` tool does not run at the model provider. It calls Exa or
+Parallel directly, so the query text — which in an agentic session routinely
+contains code identifiers, error strings, dependency names and task
+descriptions — went to a third party. Parallel additionally received the
+session ID and the model name.
+
+Upstream gated it inconsistently:
+
+- The v1 path enabled the tool whenever the vendor gateway was the selected
+  provider, even though the queries went to Exa/Parallel rather than to the
+  gateway.
+- The v2 path in `packages/core` registered the tool unconditionally and picked
+  the backend with `hash(sessionID) % 2` — a silent A/B split between two
+  companies, with no opt-in anywhere and no API key, so queries rode on the
+  vendor's shared quota.
+
+Now, in both paths, the tool is only registered and only offered to the model
+when the user explicitly opts in via `ALPHACODE_ENABLE_EXA`,
+`ALPHACODE_ENABLE_PARALLEL`, or `ALPHACODE_WEBSEARCH_PROVIDER`. No backend is
+ever chosen on the user's behalf.
+
+## Checked and found clean
+
+- **MCP.** No bundled or default remote MCP servers; every server is
+  user-configured.
+- **Workspace / control-plane sync.** `/sync/history`, `/vcs/apply`,
+  `/sync/replay` and `/sync/steal` only reach a URL if a plugin registers a
+  remote workspace adapter. The one built-in adapter (`worktree`) resolves to a
+  local directory, and the whole feature sits behind
+  `ALPHACODE_EXPERIMENTAL_WORKSPACES`.
+- **Skill discovery.** Downloads skills from an index URL, but only from URLs
+  the user puts in `skills.urls`. No default source.
+- **`@alphacode-ai/http-recorder`.** Records HTTP traffic to cassettes, but it
+  is a devDependency and is never imported from `src`.
+- **Electron.** `crashReporter.start({ uploadToServer: false })`; `netLog`
+  writes to a local file only.
+- **OAuth callback pages.** Post to `window.location.origin`, i.e. the
+  loopback listener, not to a vendor.
+- **Provider auth plugins** (Azure, Cloudflare, DigitalOcean, Snowflake, xAI,
+  Copilot, Codex, Modal, GitLab, Poe). Each only contacts its own provider, and
+  only during an explicit login.
+
 ## Rebrand notes
 
 The `opencode` → `alphacode` rename rewrote brand strings wholesale, including
@@ -66,6 +116,10 @@ name and `OpenCode*` exports cannot be changed without rebuilding an artifact
 this repo does not own. The equivalent workspace package (`packages/client`,
 consumed by `packages/sdk-next`) *is* renamed to `@alphacode-ai/client` with
 `AlphaCode*` exports.
+
+Three published npm packages keep the old name because they are third-party and
+not ours to rename: `opencode-gitlab-auth`, `opencode-poe-auth` and
+`@gitlab/opencode-gitlab-auth`. They are bundled default auth plugins.
 
 ## Verifying
 

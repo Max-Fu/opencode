@@ -12,7 +12,6 @@ import { PermissionV2 } from "../permission"
 import { Tool } from "./tool"
 import { Tools } from "./tools"
 import { collectBoundedResponseBody } from "./http-body"
-import { checksum } from "../util/encode"
 import { ToolRegistry } from "./registry"
 
 export const name = "websearch"
@@ -85,15 +84,23 @@ export const defaultConfigLayer = Layer.sync(ConfigService, () =>
 
 export const configNode = makeLocationNode({ service: ConfigService, layer: defaultConfigLayer, deps: [] })
 
+/** True only when the user explicitly opted into a third-party search backend. */
+export function enabled(config: Pick<Config, "provider" | "enableExa" | "enableParallel">) {
+  return config.provider !== undefined || config.enableExa || config.enableParallel
+}
+
 export function selectProvider(
-  sessionID: string,
+  _sessionID: string,
   flags: Pick<Config, "enableExa" | "enableParallel"> = { enableExa: false, enableParallel: false },
   override?: Provider,
 ): Provider {
   if (override) return override
   if (flags.enableParallel) return "parallel"
   if (flags.enableExa) return "exa"
-  return Number.parseInt(checksum(sessionID) ?? "0", 36) % 2 === 0 ? "exa" : "parallel"
+  // Unreachable: the tool is not registered unless enabled() is true. Upstream
+  // split on a hash of the session ID here, silently routing half of all
+  // queries to Exa and half to Parallel with no opt-in at all.
+  return "exa"
 }
 
 const McpResult = Schema.Struct({
@@ -195,6 +202,10 @@ const layer = Layer.effectDiscard(
     const http = yield* HttpClient.HttpClient
     const config = yield* ConfigService
     const permission = yield* PermissionV2.Service
+
+    // Do not even advertise the tool unless a backend was opted into: an
+    // unregistered tool cannot be called by the model, so no query can leak.
+    if (!enabled(config)) return
 
     yield* tools
       .register({

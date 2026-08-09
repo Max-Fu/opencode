@@ -3,7 +3,6 @@ import { HttpClient } from "effect/unstable/http"
 import * as Tool from "./tool"
 import * as McpWebSearch from "./mcp-websearch"
 import DESCRIPTION from "./websearch.txt"
-import { checksum } from "@alphacode-ai/core/util/encode"
 import { InstallationVersion } from "@alphacode-ai/core/installation/version"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 
@@ -27,13 +26,20 @@ export const Parameters = Schema.Struct({
 const WebSearchProviderSchema = Schema.Literals(["exa", "parallel"])
 export type WebSearchProvider = Schema.Schema.Type<typeof WebSearchProviderSchema>
 
-export function selectWebSearchProvider(sessionID: string, flags = { exa: false, parallel: false }): WebSearchProvider {
+export function selectWebSearchProvider(
+  _sessionID: string,
+  flags = { exa: false, parallel: false },
+): WebSearchProvider {
   const override = process.env.ALPHACODE_WEBSEARCH_PROVIDER
   if (override === "exa" || override === "parallel") return override
   if (flags.parallel) return "parallel"
   if (flags.exa) return "exa"
 
-  return Number.parseInt(checksum(sessionID) ?? "0", 36) % 2 === 0 ? "exa" : "parallel"
+  // Unreachable: webSearchEnabled() hides the tool unless a provider was opted
+  // into. Upstream split on a hash of the session ID here, which silently sent
+  // half of all queries to Exa and half to Parallel; never pick a third-party
+  // search backend on the user's behalf.
+  return "exa"
 }
 
 export function webSearchProviderLabel(provider: unknown) {

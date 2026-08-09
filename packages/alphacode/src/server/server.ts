@@ -80,8 +80,31 @@ export async function listen(opts: ListenOptions): Promise<Listener> {
   }
 }
 
+const LOOPBACK = new Set(["127.0.0.1", "localhost", "::1", "::ffff:127.0.0.1"])
+
+/**
+ * Binding off-loopback exposes the whole instance API - sessions, file read and
+ * write, and PTY - to the network. Auth is only enforced when a password is
+ * configured, so without this guard `--hostname 0.0.0.0` (or `--mdns`, which
+ * flips the hostname to 0.0.0.0 and then advertises the service over the LAN)
+ * would publish an unauthenticated remote-execution endpoint.
+ */
+export function assertNetworkBindIsAuthenticated(hostname: string) {
+  if (LOOPBACK.has(hostname)) return
+  if (process.env["ALPHACODE_SERVER_PASSWORD"]) return
+  if (process.env["ALPHACODE_ALLOW_INSECURE_BIND"] === "1" || process.env["ALPHACODE_ALLOW_INSECURE_BIND"] === "true") {
+    return
+  }
+  throw new Error(
+    `Refusing to listen on ${hostname} without authentication. The instance API exposes sessions, file access ` +
+      `and terminals. Set ALPHACODE_SERVER_PASSWORD to require a password, or set ALPHACODE_ALLOW_INSECURE_BIND=1 ` +
+      `to accept the risk on a trusted network.`,
+  )
+}
+
 const listenEffect: (opts: ListenOptions) => Effect.Effect<EffectListener, unknown> = Effect.fn("Server.listen")(
   function* (opts: ListenOptions) {
+    assertNetworkBindIsAuthenticated(opts.hostname)
     const state = yield* startWithPortFallback(opts)
     const address = yield* tcpAddress(state)
     const listenerUrl = makeURL(opts.hostname, address.port)

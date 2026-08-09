@@ -1,4 +1,4 @@
-const modelsUrl = process.env.ALPHACODE_MODELS_URL || "https://models.alphacode.ai"
+const modelsUrl = process.env.ALPHACODE_MODELS_URL || "https://models.dev"
 
 export const modelsData = process.env.MODELS_DEV_API_JSON
   ? await Bun.file(process.env.MODELS_DEV_API_JSON).text()

@@ -111,9 +111,15 @@ throwaway directory so no cached catalog or credential could mask a request.
 
 | Run | App-level HTTP | External sockets |
 | --- | --- | --- |
-| `alphacode models`, defaults | none | none |
-| `alphacode run "say hi"`, defaults | none | none |
+| `alphacode models`, defaults (from source) | none | none |
+| `alphacode run "say hi"`, defaults (from source) | none | none |
+| `alphacode models`, defaults (**compiled binary**) | n/a | none |
 | `alphacode models` with `ALPHACODE_ENABLE_MODELS_FETCH=1` | `https://models.dev/api.json` | as expected |
+
+The compiled binary was produced with
+`bun packages/alphacode/script/build.ts --single --skip-embed-web-ui --skip-install`
+and listed 147 models from the catalog snapshot embedded at build time while
+opening zero sockets, which is the point of embedding it.
 
 The third row is the control: it proves the instrumentation actually observes
 requests, so the empty first two rows mean silence rather than a blind spot.
@@ -124,6 +130,37 @@ positive control fires before trusting a clean run.
 Two findings came out of running it rather than reading it: the per-start npm
 request for the plugin SDK, and three third-party npm packages the rename had
 broken.
+
+## Inbound
+
+Egress is only half of it, so the compiled binary's listener was probed too.
+
+Defaults are safe: `hostname` is `127.0.0.1`, `mdns` is off, and the process
+opens no UDP socket (mDNS would be 5353). `GET /` returns
+`404 {"error":"Web UI is not bundled in this build and remote UI proxying is
+disabled"}` rather than proxying to a vendor host, confirming that change end to
+end in a real build.
+
+The gap was authentication. `ServerAuth.required()` is true only when
+`ALPHACODE_SERVER_PASSWORD` happens to be set, so auth is opt-in rather than
+required. Probing an unauthenticated loopback server returned `200` for
+`/session`, `/config` and `/project/current`. That is fine on loopback, but
+`--hostname 0.0.0.0` — or `--mdns`, which flips the hostname to `0.0.0.0` *and*
+advertises the service on the LAN — turned it into an unauthenticated endpoint
+exposing sessions, file read/write and PTY. Upstream only printed a warning.
+
+`assertNetworkBindIsAuthenticated()` in `packages/alphacode/src/server/server.ts`
+now refuses a non-loopback bind unless a password is set, with
+`ALPHACODE_ALLOW_INSECURE_BIND=1` as a deliberate escape hatch. Verified against
+the built binary:
+
+| Bind | Password | Result |
+| --- | --- | --- |
+| `127.0.0.1` | none | starts (unchanged) |
+| `0.0.0.0` | none | refused with an explanatory error |
+| `0.0.0.0` | set | starts; `401` unauthenticated, `200` authenticated |
+
+Covered by `packages/alphacode/test/server/insecure-bind.test.ts` (5 tests).
 
 ## Rebrand notes
 

@@ -18,13 +18,16 @@ import path from "path"
 // bun process.
 const ORIGINAL_MODELS_PATH = Flag.ALPHACODE_MODELS_PATH
 const ORIGINAL_DISABLE_FETCH = Flag.ALPHACODE_DISABLE_MODELS_FETCH
+const ORIGINAL_ENABLE_FETCH = Flag.ALPHACODE_ENABLE_MODELS_FETCH
 beforeAll(() => {
   Flag.ALPHACODE_MODELS_PATH = undefined
   Flag.ALPHACODE_DISABLE_MODELS_FETCH = true
+  Flag.ALPHACODE_ENABLE_MODELS_FETCH = false
 })
 afterAll(() => {
   Flag.ALPHACODE_MODELS_PATH = ORIGINAL_MODELS_PATH
   Flag.ALPHACODE_DISABLE_MODELS_FETCH = ORIGINAL_DISABLE_FETCH
+  Flag.ALPHACODE_ENABLE_MODELS_FETCH = ORIGINAL_ENABLE_FETCH
 })
 
 const cacheFile = path.join(Global.Path.cache, "models.json")
@@ -112,6 +115,25 @@ const writeCache = (data: object, mtimeMs?: number) => writeCacheText(JSON.strin
 const provided = <A, E>(state: Ref.Ref<MockState>, eff: Effect.Effect<A, E, ModelsDev.Service>) =>
   eff.pipe(Effect.provide(buildLayer(state)))
 
+/**
+ * Fetching is opt-in, and `remoteEnabled` is read once while the layer is being
+ * built, so the flags have to be set before `provided(...)` runs and restored
+ * afterwards.
+ */
+const withFetchEnabled = <A, E, R>(eff: Effect.Effect<A, E, R>) =>
+  Effect.acquireUseRelease(
+    Effect.sync(() => {
+      Flag.ALPHACODE_DISABLE_MODELS_FETCH = false
+      Flag.ALPHACODE_ENABLE_MODELS_FETCH = true
+    }),
+    () => eff,
+    () =>
+      Effect.sync(() => {
+        Flag.ALPHACODE_DISABLE_MODELS_FETCH = true
+        Flag.ALPHACODE_ENABLE_MODELS_FETCH = false
+      }),
+  )
+
 beforeEach(async () => {
   await rm(cacheFile, { force: true })
 })
@@ -158,16 +180,11 @@ describe("ModelsDev Service", () => {
     Effect.gen(function* () {
       yield* writeCacheText("{")
       const state = yield* Ref.make({ ...initialState, body: JSON.stringify(fixture2) })
-      const context = yield* Layer.build(buildLayer(state))
-      const result = yield* Effect.acquireUseRelease(
-        Effect.sync(() => {
-          Flag.ALPHACODE_DISABLE_MODELS_FETCH = false
-        }),
-        () => ModelsDev.Service.use((s) => s.get()).pipe(Effect.provide(context)),
-        () =>
-          Effect.sync(() => {
-            Flag.ALPHACODE_DISABLE_MODELS_FETCH = true
-          }),
+      const result = yield* withFetchEnabled(
+        Effect.gen(function* () {
+          const context = yield* Layer.build(buildLayer(state))
+          return yield* ModelsDev.Service.use((s) => s.get()).pipe(Effect.provide(context))
+        }).pipe(Effect.scoped),
       )
       expect(result).toEqual(fixture2)
       expect(yield* Effect.promise(() => readFile(cacheFile, "utf8"))).toBe(JSON.stringify(fixture2))
@@ -217,7 +234,7 @@ describe("ModelsDev Service", () => {
     Effect.gen(function* () {
       yield* writeCache(fixture)
       const state = yield* Ref.make({ ...initialState, body: JSON.stringify(fixture2) })
-      const result = yield* provided(
+      const result = yield* withFetchEnabled(provided(
         state,
         Effect.gen(function* () {
           const svc = yield* ModelsDev.Service
@@ -226,7 +243,7 @@ describe("ModelsDev Service", () => {
           const after = yield* svc.get()
           return { before, after }
         }),
-      )
+      ))
       expect(result.before).toEqual(fixture)
       expect(result.after).toEqual(fixture2)
       const final = yield* Ref.get(state)
@@ -255,14 +272,14 @@ describe("ModelsDev Service", () => {
       // Stale: mtime 10 minutes ago, beyond the 5-minute TTL.
       yield* writeCache(fixture, Date.now() - 10 * 60 * 1000)
       const state = yield* Ref.make({ ...initialState, body: JSON.stringify(fixture2) })
-      const after = yield* provided(
+      const after = yield* withFetchEnabled(provided(
         state,
         Effect.gen(function* () {
           const svc = yield* ModelsDev.Service
           yield* svc.refresh(false)
           return yield* svc.get()
         }),
-      )
+      ))
       const final = yield* Ref.get(state)
       expect(final.calls.length).toBe(1)
       expect(after).toEqual(fixture2)
@@ -273,14 +290,14 @@ describe("ModelsDev Service", () => {
     Effect.gen(function* () {
       yield* writeCache(fixture)
       const state = yield* Ref.make({ ...initialState, status: 500, body: "boom" })
-      const result = yield* provided(
+      const result = yield* withFetchEnabled(provided(
         state,
         Effect.gen(function* () {
           const svc = yield* ModelsDev.Service
           yield* svc.refresh(true)
           return yield* svc.get()
         }),
-      )
+      ))
       expect(result).toEqual(fixture)
       // retryTransient retries 5xx, so calls may be > 1.
       const final = yield* Ref.get(state)

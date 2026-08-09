@@ -101,6 +101,8 @@ describe("LocationServiceMap", () => {
               ),
             )
 
+          // `websearch` is deliberately absent: it calls Exa/Parallel rather than the
+          // model provider, so it is only registered when explicitly opted into.
           const blockedState = yield* update(blocked.path)
           expect(blockedState.providers.some((provider) => provider.id === ProviderV2.ID.make("test"))).toBe(false)
           expect(blockedState.tools.map((tool) => tool.name).sort()).toEqual([
@@ -115,7 +117,6 @@ describe("LocationServiceMap", () => {
             "skill",
             "todowrite",
             "webfetch",
-            "websearch",
             "write",
           ])
           const allowedState = yield* update(allowed.path)
@@ -132,7 +133,6 @@ describe("LocationServiceMap", () => {
             "skill",
             "todowrite",
             "webfetch",
-            "websearch",
             "write",
           ])
         }),

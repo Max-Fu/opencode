@@ -1,4 +1,4 @@
-export * as OpenCode from "./alphacode"
+export * as AlphaCode from "./alphacode"
 export * as Tool from "./tool"
 
 export { ClientError } from "@alphacode-ai/client/effect"

@@ -71,7 +71,11 @@ const requests: Request[] = []
 const assertions: PermissionV2.AssertInput[] = []
 let responseBody = payload("search results")
 let makeResponse = () => new Response(responseBody, { status: 200 })
-let config: WebSearchTool.Config = { enableExa: false, enableParallel: false }
+// The layer decides whether to register the tool while it is being built, which
+// happens before any test body runs - so the default has to opt in, otherwise
+// every registration test would exercise the disabled path. The gate itself is
+// covered directly by the `enabled()` tests below.
+let config: WebSearchTool.Config = { provider: "exa", enableExa: false, enableParallel: false }
 
 beforeEach(() => {
   responseBody = payload("search results")
@@ -134,6 +138,19 @@ const it = testEffect(
     ],
   ),
 )
+
+describe("WebSearchTool.enabled", () => {
+  test("is false when no backend was opted into", () => {
+    expect(WebSearchTool.enabled({ enableExa: false, enableParallel: false })).toBe(false)
+    expect(WebSearchTool.enabled({ provider: undefined, enableExa: false, enableParallel: false })).toBe(false)
+  })
+
+  test("is true for any explicit opt-in", () => {
+    expect(WebSearchTool.enabled({ provider: "exa", enableExa: false, enableParallel: false })).toBe(true)
+    expect(WebSearchTool.enabled({ enableExa: true, enableParallel: false })).toBe(true)
+    expect(WebSearchTool.enabled({ enableParallel: true, enableExa: false })).toBe(true)
+  })
+})
 
 describe("WebSearchTool registration", () => {
   it.effect("registers websearch, asserts query permission, and calls Exa", () =>

@@ -37,11 +37,15 @@ describe("websearch provider", () => {
     expect(selectWebSearchProvider(SESSION_ID, { exa: false, parallel: true })).toBe("parallel")
   })
 
-  test("is only enabled for alphacode or explicit websearch provider flags", () => {
-    expect(webSearchEnabled(ProviderV2.ID.alphacode, { exa: false, parallel: false })).toBe(true)
+  // Queries go to Exa or Parallel, never to the model provider, so no provider
+  // choice may enable the tool implicitly - not even the vendor gateway, which
+  // upstream used to treat as consent.
+  test("is enabled only by an explicit websearch provider flag", () => {
+    expect(webSearchEnabled(ProviderV2.ID.alphacode, { exa: false, parallel: false })).toBe(false)
     expect(webSearchEnabled(ProviderV2.ID.openai, { exa: false, parallel: false })).toBe(false)
     expect(webSearchEnabled(ProviderV2.ID.openai, { exa: true, parallel: false })).toBe(true)
     expect(webSearchEnabled(ProviderV2.ID.openai, { exa: false, parallel: true })).toBe(true)
+    expect(webSearchEnabled(ProviderV2.ID.alphacode, { exa: true, parallel: false })).toBe(true)
   })
 
   test("uses branded labels", () => {

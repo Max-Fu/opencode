@@ -18,7 +18,7 @@ import { MistralPlugin } from "./provider/mistral"
 import { OpenAIPlugin } from "./provider/openai"
 import { SnowflakeCortexPlugin } from "./provider/snowflake-cortex"
 import { OpenAICompatiblePlugin } from "./provider/openai-compatible"
-import { OpencodePlugin } from "./provider/opencode"
+import { AlphacodePlugin } from "./provider/alphacode"
 import { OpenRouterPlugin } from "./provider/openrouter"
 import { PerplexityPlugin } from "./provider/perplexity"
 import { SapAICorePlugin } from "./provider/sap-ai-core"
@@ -48,7 +48,7 @@ export const ProviderPlugins: PluginInternal.Plugin<PluginInternal.Requirements 
   GoogleVertexPlugin,
   GroqPlugin,
   MistralPlugin,
-  OpencodePlugin,
+  AlphacodePlugin,
   SnowflakeCortexPlugin,
   OpenAICompatiblePlugin,
   OpenAIPlugin,

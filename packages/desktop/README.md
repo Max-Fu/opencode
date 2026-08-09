@@ -1,6 +1,6 @@
-# OpenCode Desktop
+# AlphaCode Desktop
 
-The OpenCode Desktop app, built with Electron.
+The AlphaCode Desktop app, built with Electron.
 
 ## Development
 

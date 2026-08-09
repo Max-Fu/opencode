@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=AlphaCode
+Exec=/opt/AlphaCode/ai.alphacode.desktop %U
+Terminal=false
+Type=Application
+Icon=ai.alphacode.desktop
+StartupWMClass=ai.alphacode.desktop
+NoDisplay=true
+Comment=Open source AI coding agent
+Categories=Development;

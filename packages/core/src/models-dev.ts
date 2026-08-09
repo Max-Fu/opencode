@@ -1,7 +1,7 @@
 import path from "path"
 import { Context, Duration, Effect, Layer, Option, Schedule, Schema } from "effect"
 import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/unstable/http"
-import { ModelsDev } from "@opencode-ai/schema/models-dev"
+import { ModelsDev } from "@alphacode-ai/schema/models-dev"
 import { Global } from "./global"
 import { Flag } from "./flag/flag"
 import { Flock } from "./util/flock"
@@ -20,7 +20,7 @@ const InterleavedField = Schema.Union([
   Schema.String,
 ])
 
-const USER_AGENT = `opencode/${InstallationChannel}/${InstallationVersion}/${Flag.OPENCODE_CLIENT}`
+const USER_AGENT = `alphacode/${InstallationChannel}/${InstallationVersion}/${Flag.ALPHACODE_CLIENT}`
 
 const CostTier = Schema.Struct({
   input: Schema.Finite,
@@ -133,14 +133,14 @@ export type Provider = Schema.Schema.Type<typeof Provider>
 
 export const Event = ModelsDev.Event
 
-declare const OPENCODE_MODELS_DEV: Record<string, Provider> | undefined
+declare const ALPHACODE_MODELS_DEV: Record<string, Provider> | undefined
 
 export interface Interface {
   readonly get: () => Effect.Effect<Record<string, Provider>>
   readonly refresh: (force?: boolean) => Effect.Effect<void>
 }
 
-export class Service extends Context.Service<Service, Interface>()("@opencode/ModelsDev") {}
+export class Service extends Context.Service<Service, Interface>()("@alphacode/ModelsDev") {}
 
 const layer = Layer.effect(
   Service,
@@ -158,13 +158,14 @@ const layer = Layer.effect(
     )
 
     // Off by default: the catalog is served from the build-time snapshot, the
-    // on-disk cache, or OPENCODE_MODELS_PATH so a normal run never reaches out
-    // to a catalog host. Set OPENCODE_ENABLE_MODELS_FETCH=1 to opt back in.
-    const remoteEnabled = Flag.OPENCODE_ENABLE_MODELS_FETCH && !Flag.OPENCODE_DISABLE_MODELS_FETCH
-    const source = Flag.OPENCODE_MODELS_URL || "https://models.opencode.ai"
+    // on-disk cache, or ALPHACODE_MODELS_PATH so a normal run never reaches out
+    // to a catalog host. Set ALPHACODE_ENABLE_MODELS_FETCH=1 to opt back in.
+    const remoteEnabled = Flag.ALPHACODE_ENABLE_MODELS_FETCH && !Flag.ALPHACODE_DISABLE_MODELS_FETCH
+    // Upstream open catalog, not a vendor-operated mirror.
+    const source = Flag.ALPHACODE_MODELS_URL || "https://models.dev"
     const filepath = path.join(
       Global.Path.cache,
-      source === "https://models.opencode.ai" ? "models.json" : `models-${Hash.fast(source)}.json`,
+      source === "https://models.dev" ? "models.json" : `models-${Hash.fast(source)}.json`,
     )
     const ttl = Duration.minutes(5)
     const lockKey = `models-dev:${filepath}`
@@ -185,10 +186,10 @@ const layer = Layer.effect(
       )
     })
 
-    const loadFromDisk = fs.readJson(Flag.OPENCODE_MODELS_PATH ?? filepath).pipe(
+    const loadFromDisk = fs.readJson(Flag.ALPHACODE_MODELS_PATH ?? filepath).pipe(
       Effect.catch((error) => {
         if (
-          Flag.OPENCODE_MODELS_PATH === undefined &&
+          Flag.ALPHACODE_MODELS_PATH === undefined &&
           error._tag === "FileSystemError" &&
           error.method === "readJson"
         ) {
@@ -200,7 +201,7 @@ const layer = Layer.effect(
     )
 
     const loadSnapshot = Effect.sync(() =>
-      typeof OPENCODE_MODELS_DEV === "undefined" ? undefined : OPENCODE_MODELS_DEV,
+      typeof ALPHACODE_MODELS_DEV === "undefined" ? undefined : ALPHACODE_MODELS_DEV,
     )
 
     const fetchAndWrite = Effect.fn("ModelsDev.fetchAndWrite")(function* () {
@@ -224,7 +225,7 @@ const layer = Layer.effect(
       const snapshot = yield* loadSnapshot
       if (snapshot) return snapshot
       if (!remoteEnabled) return {}
-      // Flock is cross-process: concurrent opencode CLIs can race on this cache file.
+      // Flock is cross-process: concurrent alphacode CLIs can race on this cache file.
       const text = yield* Effect.scoped(
         Effect.gen(function* () {
           yield* Flock.effect(lockKey)
@@ -243,7 +244,7 @@ const layer = Layer.effect(
     // background refresh is off.
     const refresh = Effect.fn("ModelsDev.refresh")(function* (force = false) {
       if (!force && !remoteEnabled) return
-      if (force && Flag.OPENCODE_DISABLE_MODELS_FETCH) return
+      if (force && Flag.ALPHACODE_DISABLE_MODELS_FETCH) return
       if (!force && (yield* fresh())) return
       yield* Effect.scoped(
         Effect.gen(function* () {

@@ -1,13 +1,13 @@
-import { AISDK } from "@opencode-ai/core/aisdk"
+import { AISDK } from "@alphacode-ai/core/aisdk"
 import { describe, expect } from "bun:test"
 import { Effect } from "effect"
-import { Catalog } from "@opencode-ai/core/catalog"
-import { ModelV2 } from "@opencode-ai/core/model"
-import { PluginV2 } from "@opencode-ai/core/plugin"
-import { PluginHost } from "@opencode-ai/core/plugin/host"
-import { ProviderPlugins } from "@opencode-ai/core/plugin/provider"
-import { OpenRouterPlugin } from "@opencode-ai/core/plugin/provider/openrouter"
-import { ProviderV2 } from "@opencode-ai/core/provider"
+import { Catalog } from "@alphacode-ai/core/catalog"
+import { ModelV2 } from "@alphacode-ai/core/model"
+import { PluginV2 } from "@alphacode-ai/core/plugin"
+import { PluginHost } from "@alphacode-ai/core/plugin/host"
+import { ProviderPlugins } from "@alphacode-ai/core/plugin/provider"
+import { OpenRouterPlugin } from "@alphacode-ai/core/plugin/provider/openrouter"
+import { ProviderV2 } from "@alphacode-ai/core/provider"
 import { testEffect } from "../lib/effect"
 import { PluginTestLayer } from "./fixture"
 
@@ -25,7 +25,7 @@ describe("OpenRouterPlugin", () => {
     Effect.sync(() => expect(ProviderPlugins.map((item) => item.id)).toContain(PluginV2.ID.make("openrouter"))),
   )
 
-  it.effect("does not add opencode attribution headers", () =>
+  it.effect("does not add alphacode attribution headers", () =>
     Effect.gen(function* () {
       const catalog = yield* Catalog.Service
       yield* catalog.transform((catalog) => {

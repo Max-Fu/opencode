@@ -1,12 +1,12 @@
-import { AISDK } from "@opencode-ai/core/aisdk"
+import { AISDK } from "@alphacode-ai/core/aisdk"
 import { describe, expect, mock } from "bun:test"
 import { Effect } from "effect"
-import { Catalog } from "@opencode-ai/core/catalog"
-import { ModelV2 } from "@opencode-ai/core/model"
-import { PluginV2 } from "@opencode-ai/core/plugin"
-import { PluginHost } from "@opencode-ai/core/plugin/host"
-import { CerebrasPlugin } from "@opencode-ai/core/plugin/provider/cerebras"
-import { ProviderV2 } from "@opencode-ai/core/provider"
+import { Catalog } from "@alphacode-ai/core/catalog"
+import { ModelV2 } from "@alphacode-ai/core/model"
+import { PluginV2 } from "@alphacode-ai/core/plugin"
+import { PluginHost } from "@alphacode-ai/core/plugin/host"
+import { CerebrasPlugin } from "@alphacode-ai/core/plugin/provider/cerebras"
+import { ProviderV2 } from "@alphacode-ai/core/provider"
 import { testEffect } from "../lib/effect"
 import { PluginTestLayer } from "./fixture"
 
@@ -31,7 +31,7 @@ void mock.module("@ai-sdk/cerebras", () => ({
 }))
 
 describe("CerebrasPlugin", () => {
-  it.effect("does not add opencode attribution headers", () =>
+  it.effect("does not add alphacode attribution headers", () =>
     Effect.gen(function* () {
       const catalog = yield* Catalog.Service
       yield* catalog.transform((catalog) => {

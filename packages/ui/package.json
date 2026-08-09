@@ -1,11 +1,11 @@
 {
-  "name": "@opencode-ai/ui",
+  "name": "@alphacode-ai/ui",
   "version": "1.18.15",
   "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/anomalyco/opencode.git",
+    "url": "git+https://github.com/anomalyco/alphacode.git",
     "directory": "packages/ui"
   },
   "publishConfig": {

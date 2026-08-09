@@ -1,18 +1,18 @@
 export * from "./client.js"
 export * from "./server.js"
 
-import { createOpencodeClient } from "./client.js"
-import { createOpencodeServer } from "./server.js"
+import { createAlphacodeClient } from "./client.js"
+import { createAlphacodeServer } from "./server.js"
 import type { ServerOptions } from "./server.js"
 
 export * as data from "./data.js"
 
-export async function createOpencode(options?: ServerOptions) {
-  const server = await createOpencodeServer({
+export async function createAlphacode(options?: ServerOptions) {
+  const server = await createAlphacodeServer({
     ...options,
   })
 
-  const client = createOpencodeClient({
+  const client = createAlphacodeClient({
     baseUrl: server.url,
   })
 

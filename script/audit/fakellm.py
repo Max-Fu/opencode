@@ -14,6 +14,11 @@ Env:
   FAKE_LLM_REPLY       final assistant text
   FAKE_LLM_TOOL        tool to call, or "none" to disable the tool round trip
   FAKE_LLM_TOOL_ARGS   JSON arguments for that tool
+  FAKE_LLM_FAIL_TIMES  fail the first N *agent* requests before answering (default 0);
+                       requests carrying no tools (title generation) are never
+                       failed, so the budget lands on the turn under test
+  FAKE_LLM_FAIL_STATUS status to fail with (default 429)
+  FAKE_LLM_RETRY_AFTER value for the retry-after header on those failures
 """
 import json
 import os
@@ -26,6 +31,13 @@ LOG = os.environ.get("FAKE_LLM_LOG", "/tmp/fakellm.jsonl")
 REPLY = os.environ.get("FAKE_LLM_REPLY", "Done. The file was read.")
 TOOL = os.environ.get("FAKE_LLM_TOOL", "read")
 TOOL_ARGS = os.environ.get("FAKE_LLM_TOOL_ARGS", json.dumps({"filePath": "/etc/hostname"}))
+FAIL_TIMES = int(os.environ.get("FAKE_LLM_FAIL_TIMES", "0"))
+FAIL_STATUS = int(os.environ.get("FAKE_LLM_FAIL_STATUS", "429"))
+RETRY_AFTER = os.environ.get("FAKE_LLM_RETRY_AFTER", "")
+
+# Fault injection is deliberately deterministic: a real provider's 429s cannot be
+# summoned on demand, so retry/backoff is exercised here instead.
+_failures_left = {"n": FAIL_TIMES}
 
 open(LOG, "w").close()
 
@@ -95,6 +107,22 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         body = self._read_body()
         self._capture(body)
+
+        carries_tools = bool(isinstance(body, dict) and (body.get("tools") or []))
+        if _failures_left["n"] > 0 and carries_tools:
+            _failures_left["n"] -= 1
+            payload = json.dumps(
+                {"error": {"message": "rate limited by the fake provider", "type": "rate_limit_error"}}
+            ).encode()
+            self.send_response(FAIL_STATUS)
+            self.send_header("content-type", "application/json")
+            if RETRY_AFTER:
+                self.send_header("retry-after", RETRY_AFTER)
+            self.send_header("content-length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+            return
+
         action = plan(body)
         stream = bool(isinstance(body, dict) and body.get("stream"))
         want_usage = bool(
@@ -208,7 +236,11 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
-    print(f"fake llm on http://127.0.0.1:{PORT}/v1  log={LOG}  tool={TOOL}", flush=True)
+    print(
+        f"fake llm on http://127.0.0.1:{PORT}/v1  log={LOG}  tool={TOOL} "
+        f"fail_times={FAIL_TIMES} fail_status={FAIL_STATUS} retry_after={RETRY_AFTER or '-'}",
+        flush=True,
+    )
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

@@ -117,6 +117,7 @@ throwaway directory so no cached catalog or credential could mask a request.
 | `alphacode run` **executing a tool**, clean project (**compiled binary**) | n/a | none |
 | `alphacode run` against **real OpenAI**, single tool call | n/a | `api.openai.com` only |
 | `alphacode run` against **real OpenAI**, multi-tool session | n/a | `api.openai.com` only |
+| `alphacode run` against **real OpenAI**, triggering auto-compaction | n/a | `api.openai.com` only |
 | `alphacode models` with `ALPHACODE_ENABLE_MODELS_FETCH=1` | `https://models.dev/api.json` | as expected |
 
 The compiled binary was produced with
@@ -247,8 +248,45 @@ still used a single upstream host, reusing the connection via keep-alive.
 This also confirms that removing the `HTTP-Referer` and `X-Title` attribution
 headers does not break a real provider: requests succeed without them.
 
-Not covered by these runs: 429/retry handling and auto-compaction, which need
-either sustained load or a very long session to trigger.
+### Retry and back-off
+
+Real 429s cannot be summoned on demand, and hammering a provider to earn one is
+both non-deterministic and rude, so `script/audit/fakellm.py` injects the faults
+instead. `FAKE_LLM_FAIL_TIMES` fails that many *agent* turns before answering —
+turns carrying no tools (title generation) are exempt, so the budget lands on
+the turn under test.
+
+| Injected | Result |
+| --- | --- |
+| 2× `429`, `retry-after: 1` | retried, recovered, exit 0 |
+| 1× `429`, `retry-after: 20` | **23s** wall clock — the header is honoured, not ignored |
+| 2× `500`, no `retry-after` | ~2s + 4s exponential back-off, recovered, exit 0 |
+
+The `retry-after: 20` run is the discriminating one: with the header ignored it
+would have finished in about 5s.
+
+### Auto-compaction
+
+Compaction triggers when a session's tokens reach
+`context - maxOutputTokens` (`packages/alphacode/src/session/overflow.ts`).
+Filling a 128k window would be expensive, so the config caps the window instead —
+a real `openai/gpt-4o-mini` declared with `limit: { context: 16000, output: 2000 }`.
+Reading a 43KB file then continuing crosses it.
+
+The session log shows compaction firing for real:
+
+```
+5 LLM calls, all providerID=openai
+  3x agent=build         gpt-4o-mini
+  1x agent=compaction    gpt-4o-mini    <- the summarization pass
+  1x agent=title         gpt-5.4-nano   (small=true)
+```
+
+The session completed correctly and exited 0. This matters for egress because
+compaction feeds the **entire conversation so far — file contents included — to
+a summarizer**. That summarizer is the provider you configured. Auxiliary agents
+(title, compaction) route to the same provider, not to any vendor service, and
+the whole run again recorded `api.openai.com` and nothing else.
 
 ### Socket-level result
 

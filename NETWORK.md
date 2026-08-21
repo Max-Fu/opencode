@@ -115,6 +115,8 @@ throwaway directory so no cached catalog or credential could mask a request.
 | `alphacode run "say hi"`, defaults (from source) | none | none |
 | `alphacode models`, defaults (**compiled binary**) | n/a | none |
 | `alphacode run` **executing a tool**, clean project (**compiled binary**) | n/a | none |
+| `alphacode run` against **real OpenAI**, single tool call | n/a | `api.openai.com` only |
+| `alphacode run` against **real OpenAI**, multi-tool session | n/a | `api.openai.com` only |
 | `alphacode models` with `ALPHACODE_ENABLE_MODELS_FETCH=1` | `https://models.dev/api.json` | as expected |
 
 The compiled binary was produced with
@@ -224,6 +226,29 @@ here, because a clean project has no `references` entry. That clone is driven by
 project configuration, not by the tool.
 
 Reproduce with `script/audit/` - see the README there.
+
+### Against a real provider
+
+The stub proves the wire format; a real provider proves the integration. Two
+sessions were run against `openai/gpt-4o-mini` from an empty project, with
+`strace -f -e trace=connect` plus a chaining logging proxy:
+
+1. *"Use the read tool on README.md and tell me its first line."* The model
+   called `read` with `offset=1, limit=1` - arguments it chose itself - the tool
+   executed, and the answer was correct. Exit 0.
+2. *"Use glob to list the files here, then read version.ts and package.json, and
+   tell me whether their versions match."* The model ran `glob`, then `read`
+   twice, compared the versions, and answered correctly. Exit 0.
+
+Both sessions recorded **`CONNECT api.openai.com:443` and nothing else**, with
+zero non-loopback connections bypassing the proxy. The multi-round-trip session
+still used a single upstream host, reusing the connection via keep-alive.
+
+This also confirms that removing the `HTTP-Referer` and `X-Title` attribution
+headers does not break a real provider: requests succeed without them.
+
+Not covered by these runs: 429/retry handling and auto-compaction, which need
+either sustained load or a very long session to trigger.
 
 ### Socket-level result
 

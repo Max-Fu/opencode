@@ -1,3 +1,9 @@
+> [!WARNING]
+> **This translation is out of date for this fork.** There is no published
+> package or install script — the CLI must be built from source. See the
+> [English README](README.md#installation) for current instructions, and
+> [NETWORK.md](NETWORK.md) for what was changed relative to upstream opencode.
+
 <p align="center">
   <a href="https://alphacode.ai">
     <picture>

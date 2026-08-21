@@ -31,6 +31,20 @@ export const Splash = (props: Pick<ComponentProps<"svg">, "ref" | "class">) => {
   )
 }
 
+/**
+ * STALE ASSET: the path data below still spells "opencode".
+ *
+ * It is a 4x5 pixel font on a 6px grid, 8 glyphs at a 30px pitch (viewBox 234 =
+ * 7*30 + 24). Rendering "alphacode" needs 9 glyphs (viewBox 264) and three new
+ * letterforms (a, l, h). That is a design change, not a rename, and it is not
+ * something to generate blind - so it is flagged here rather than guessed at.
+ *
+ * The terminal wordmark (packages/tui/src/logo.ts) has been redrawn and is
+ * correct; this is the vector one used by the web and desktop UIs.
+ *
+ * `aria-label` intentionally says AlphaCode: screen-reader users should get the
+ * product name, not the stale raster.
+ */
 export const Logo = (props: { class?: string }) => {
   return (
     <svg

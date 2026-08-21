@@ -402,6 +402,8 @@ describe("util.flock", () => {
 
   test("fails clearly on unwritable lock roots", async () => {
     if (process.platform === "win32") return
+    // root ignores mode bits, so the denial this test needs cannot happen.
+    if (process.getuid?.() === 0) return
 
     await using tmp = await tmpdir()
     const dir = path.join(tmp.path, "locks")

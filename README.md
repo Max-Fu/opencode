@@ -1,17 +1,14 @@
 <p align="center">
-  <a href="https://alphacode.ai">
-    <picture>
-      <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
-      <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="AlphaCode logo">
-    </picture>
-  </a>
+  <picture>
+    <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
+    <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
+    <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="AlphaCode logo">
+  </picture>
 </p>
-<p align="center">The open source AI coding agent.</p>
+<p align="center">An AI coding agent for the terminal that talks to your model provider and nothing else.</p>
 <p align="center">
-  <a href="https://alphacode.ai/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
-  <a href="https://www.npmjs.com/package/alphacode-ai"><img alt="npm" src="https://img.shields.io/npm/v/alphacode-ai?style=flat-square" /></a>
-  <a href="https://github.com/anomalyco/alphacode/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/anomalyco/alphacode/publish.yml?style=flat-square&branch=dev" /></a>
+  <a href="NETWORK.md">Network audit</a> ·
+  <a href="#installation">Installation</a>
 </p>
 
 <p align="center">
@@ -39,63 +36,132 @@
   <a href="README.vi.md">Tiếng Việt</a>
 </p>
 
-[![AlphaCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://alphacode.ai)
+![AlphaCode Terminal UI](packages/web/src/assets/lander/screenshot.png)
 
 ---
 
 ### Installation
 
-```bash
-# YOLO
-curl -fsSL https://alphacode.ai/install | bash
+There is no published package, install script, Homebrew tap, or release binary
+for this fork — **build it from source**. Any `npm i -g`, `curl | bash`, or
+`brew install` line you find in an older copy of these docs refers to upstream
+opencode, not to this project.
 
-# Package managers
-npm i -g alphacode-ai@latest        # or bun/pnpm/yarn
-scoop install alphacode             # Windows
-choco install alphacode             # Windows
-brew install anomalyco/tap/alphacode # macOS and Linux (recommended, always up to date)
-brew install alphacode              # macOS and Linux (official brew formula, updated less)
-sudo pacman -S alphacode            # Arch Linux (Stable)
-paru -S alphacode-bin               # Arch Linux (Latest from AUR)
-mise use -g alphacode               # Any OS
-nix run nixpkgs#alphacode           # or github:anomalyco/alphacode for latest dev branch
-```
+#### Prerequisites
 
-> [!TIP]
-> Remove versions older than 0.1.x before installing.
+- [Bun](https://bun.sh) **1.3.14 or newer** — the build script enforces this
+- `git`
 
-### Desktop App (BETA)
-
-AlphaCode is also available as a desktop application. Download directly from the [releases page](https://github.com/anomalyco/alphacode/releases) or [alphacode.ai/download](https://alphacode.ai/download).
-
-| Platform              | Download                           |
-| --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `alphacode-desktop-mac-arm64.dmg`   |
-| macOS (Intel)         | `alphacode-desktop-mac-x64.dmg`     |
-| Windows               | `alphacode-desktop-windows-x64.exe` |
-| Linux                 | `.deb`, `.rpm`, or `.AppImage`     |
+#### Clone and install
 
 ```bash
-# macOS (Homebrew)
-brew install --cask alphacode-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/alphacode-desktop
+git clone https://github.com/Max-Fu/opencode.git alphacode
+cd alphacode
+bun install
 ```
 
-#### Installation Directory
+#### Build a binary (recommended)
 
-The install script respects the following priority order for the installation path:
-
-1. `$ALPHACODE_INSTALL_DIR` - Custom installation directory
-2. `$XDG_BIN_DIR` - XDG Base Directory Specification compliant path
-3. `$HOME/bin` - Standard user binary directory (if it exists or can be created)
-4. `$HOME/.alphacode/bin` - Default fallback
+This is the path to use if you actually want to *use* the CLI, because the build
+embeds a model catalog snapshot — without it the model list is empty (see the
+note under "Run from source").
 
 ```bash
-# Examples
-ALPHACODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://alphacode.ai/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://alphacode.ai/install | bash
+bun packages/alphacode/script/build.ts --single --skip-embed-web-ui --skip-install
+./packages/alphacode/dist/alphacode-<platform>/bin/alphacode --version
 ```
+
+- `--single` builds only for the current platform; omit it to cross-build every target.
+- `--skip-embed-web-ui` skips bundling the browser UI, which needs the `packages/app`
+  build to succeed. Without the UI embedded the server answers `GET /` with `404`;
+  it will not fall back to a hosted UI.
+- `--skip-install` skips downloading Bun binaries for other targets.
+- Invoke the script **directly**, not via `bun run --cwd packages/alphacode build`:
+  `bun run` re-executes the `bun` on your `PATH`, so an older copy there fails the
+  1.3.14 version check even if you launched a newer one.
+
+Put the resulting binary on your `PATH` and call it `alphacode`.
+
+#### Run from source
+
+For development. `bun run dev` is the CLI and passes arguments through:
+
+```bash
+bun run dev --version                        # -> "local"
+bun run dev                                  # interactive TUI
+bun run dev run "explain this repo"          # one-shot, non-interactive
+bun run dev models                           # list available models
+```
+
+> [!IMPORTANT]
+> The model catalog is embedded **at build time**, so a source run starts with an
+> empty catalog and `models` prints nothing. Give it a catalog one of two ways:
+>
+> ```bash
+> # a) point at a catalog file (works offline)
+> curl -o /tmp/models.json https://models.dev/api.json
+> ALPHACODE_MODELS_PATH=/tmp/models.json bun run dev models
+>
+> # b) let it fetch once and cache
+> ALPHACODE_ENABLE_MODELS_FETCH=1 bun run dev models
+> ```
+
+#### Point it at a model
+
+Credentials come from the environment or from `alphacode auth login`. Any
+provider works; the quickest is an environment variable:
+
+```bash
+export OPENAI_API_KEY=sk-...
+bun run dev run "say hi"                       # picks a default model
+bun run dev run --model openai/gpt-4o-mini "say hi"
+```
+
+To use a local or self-hosted endpoint, declare a provider in
+`~/.config/alphacode/alphacode.json`:
+
+```json
+{
+  "provider": {
+    "local": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": { "baseURL": "http://127.0.0.1:8080/v1", "apiKey": "unused" },
+      "models": { "my-model": { "name": "My Model" } }
+    }
+  },
+  "model": "local/my-model"
+}
+```
+
+#### Privacy defaults
+
+This fork removes the vendor telemetry, sharing, crash reporting and attribution
+headers that upstream shipped — see [NETWORK.md](NETWORK.md) for the full audit
+and how to reproduce it. A few things upstream did automatically are opt-in here:
+
+| Variable | Effect |
+| --- | --- |
+| `ALPHACODE_ENABLE_MODELS_FETCH=1` | Fetch the model catalog from `models.dev` instead of using the embedded snapshot |
+| `ALPHACODE_ENABLE_AUTOUPDATE=1` | Allow update checks against your install channel |
+| `ALPHACODE_ENABLE_PLUGIN_DEP_INSTALL=1` | Install the plugin SDK into project plugin directories so editors resolve types |
+| `ALPHACODE_ENABLE_EXA=1` / `ALPHACODE_ENABLE_PARALLEL=1` | Enable the `websearch` tool, which sends queries to Exa or Parallel |
+| `ALPHACODE_SEND_SESSION_HEADERS=1` | Send session-correlation headers to your provider (some gateways use them for prompt-cache routing) |
+| `ALPHACODE_SEND_CLIENT_UA=1` | Advertise the real client name and version in `User-Agent` |
+
+Serving the API off `127.0.0.1` requires authentication, because the API exposes
+sessions, file read/write and terminals:
+
+```bash
+ALPHACODE_SERVER_PASSWORD=... bun run dev serve --hostname 0.0.0.0
+```
+
+Without a password that bind is refused; `ALPHACODE_ALLOW_INSECURE_BIND=1`
+overrides it on a trusted network.
+
+#### Desktop app
+
+The desktop app is not built or distributed by this fork. `packages/desktop`
+still contains the Electron source if you want to build it yourself.
 
 ### Agents
 
@@ -110,20 +176,37 @@ AlphaCode includes two built-in agents you can switch between with the `Tab` key
 Also included is a **general** subagent for complex searches and multistep tasks.
 This is used internally and can be invoked using `@general` in messages.
 
-Learn more about [agents](https://alphacode.ai/docs/agents).
+Agents are configured in `alphacode.json`; see the in-repo docs under
+`packages/web/src/content/docs/`.
 
 ### Documentation
 
-For more info on how to configure AlphaCode, [**head over to our docs**](https://alphacode.ai/docs).
+There is no docs site for this fork. The upstream documentation sources live in
+this repository under `packages/web/src/content/docs/` and are the most complete
+reference for configuration; note that any install, account, sharing or
+telemetry instructions in them describe upstream opencode, not this fork — see
+[NETWORK.md](NETWORK.md) for what changed.
 
 ### Contributing
 
 If you're interested in contributing to AlphaCode, please read our [contributing docs](./CONTRIBUTING.md) before submitting a pull request.
 
-### Building on AlphaCode
+### Known gaps
 
-If you are working on a project that's related to AlphaCode and is using "alphacode" as part of its name, for example "alphacode-dashboard" or "alphacode-mobile", please add a note to your README to clarify that it is not built by the AlphaCode team and is not affiliated with us in any way.
+- The **vector wordmark** used by the web and desktop UIs
+  (`packages/ui/src/components/logo.tsx`, `packages/core/src/oauth/page.ts`)
+  still spells "opencode". It is a pixel font that needs three new letterforms
+  and a wider viewBox — a design change, flagged in the source rather than
+  guessed at. The terminal wordmark *has* been redrawn.
+- Two brand-asset zips and one base64 image fixture still contain the old name
+  inside their bytes.
+- `packages/desktop`, `packages/console`, `packages/stats` and `packages/web`
+  are upstream's product surfaces. They are renamed but unmaintained here, and
+  their configs still reference hosts that do not exist.
 
----
+### Provenance
 
-**Join our community** [Discord](https://discord.gg/alphacode) | [X.com](https://x.com/alphacode)
+AlphaCode is a rename of [opencode](https://github.com/anomalyco/opencode) with
+its vendor telemetry, session sharing, crash reporting and attribution headers
+removed. [NETWORK.md](NETWORK.md) records exactly what was taken out, what
+remains, and how the result was verified against a live provider.

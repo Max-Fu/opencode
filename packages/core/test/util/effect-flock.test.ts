@@ -311,6 +311,8 @@ describe("util.effect-flock", () => {
     "fails on unwritable lock roots",
     Effect.gen(function* () {
       if (process.platform === "win32") return
+      // root ignores mode bits, so the denial this test needs cannot happen.
+      if (process.getuid?.() === 0) return
       const flock = yield* EffectFlock.Service
       const tmp = yield* Effect.promise(() => fs.mkdtemp(path.join(os.tmpdir(), "eflock-test-")))
       const dir = path.join(tmp, "locks")

@@ -250,6 +250,8 @@ const STYLES = `
 `
 
 // AlphaCode wordmark — same path geometry as packages/ui/src/components/logo.tsx (Logo).
+// STALE ASSET: this path data still spells "opencode" - see the note in
+// packages/ui/src/components/logo.tsx.
 const WORDMARK = `<svg class="wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 234 42" fill="none" aria-label="AlphaCode" role="img">
         <path d="M18 30H6V18H18V30Z" fill="var(--oc-icon-weak)" />
         <path d="M18 12H6V30H18V12ZM24 36H0V6H24V36Z" fill="var(--oc-icon-base)" />

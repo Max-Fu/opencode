@@ -114,6 +114,7 @@ throwaway directory so no cached catalog or credential could mask a request.
 | `alphacode models`, defaults (from source) | none | none |
 | `alphacode run "say hi"`, defaults (from source) | none | none |
 | `alphacode models`, defaults (**compiled binary**) | n/a | none |
+| `alphacode run` **executing a tool**, clean project (**compiled binary**) | n/a | none |
 | `alphacode models` with `ALPHACODE_ENABLE_MODELS_FETCH=1` | `https://models.dev/api.json` | as expected |
 
 The compiled binary was produced with
@@ -165,7 +166,7 @@ Covered by `packages/alphacode/test/server/insecure-bind.test.ts` (5 tests).
 ## End-to-end test against a fake model server
 
 Credentials are not needed to prove "it talks to the model and nothing else". A
-stub OpenAI-compatible server (`scratchpad/fakellm.py`) logs every request it
+stub OpenAI-compatible server (`script/audit/fakellm.py`) logs every request it
 receives - method, path, headers, full body - and returns a fixed reply. The
 compiled binary was pointed at it with a config-file provider
 (`@ai-sdk/openai-compatible`, `baseURL: http://127.0.0.1:<port>/v1`) and run with
@@ -201,6 +202,28 @@ use the affinity hint to route to a warm prompt cache, so it is now behind
 
 **Client User-Agent.** Requests advertised `alphacode/<exact version>`. A neutral
 `http-client` is sent instead; `ALPHACODE_SEND_CLIENT_UA=1` restores the real one.
+
+### Full agent loop, tool execution included
+
+The strongest run: the compiled binary against the stub in an empty project,
+with a prompt that forces a real tool call.
+
+```
+[0] POST /v1/chat/completions   roles=[system,user,user]           tools=0   (title generation)
+[1] POST /v1/chat/completions   roles=[system,user]                tools=10  -> assistant calls read
+[2] POST /v1/chat/completions   roles=[system,user,assistant,tool] tools=10  -> final text
+```
+
+The `read` tool really executed (`→ Read README.md`), the file's contents came
+back to the model as a tool result, and the process exited 0. Across that entire
+session `strace` recorded **three TCP connections, all to the model endpoint,
+and nothing else** — no proxied requests at all.
+
+This also settles the `github.com` connection noted below. It did not reappear
+here, because a clean project has no `references` entry. That clone is driven by
+project configuration, not by the tool.
+
+Reproduce with `script/audit/` - see the README there.
 
 ### Socket-level result
 

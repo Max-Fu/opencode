@@ -77,6 +77,29 @@ bun --preload script/audit/netspy.ts --conditions=browser packages/alphacode/src
 
 Only works when running from source; a compiled binary cannot preload.
 
+## `genwordmark.py` — regenerate the wordmark
+
+The wordmark is a 4x7 pixel font on a 6px grid: 6px cells, glyphs 4 cells wide
+at a 30px pitch, so `viewBox` width is `(n-1)*30 + 24`. Three layers — a shadow
+across the whole word, then the ink split so the first word renders dimmer than
+the second.
+
+`GLYPH` holds one bitmap per letter (`X` ink, `+` shadow, `.` empty). o/p/e/c/d/n
+were decoded from the original opencode wordmark; a/l/h were added to match the
+terminal font in `packages/tui/src/logo.ts`.
+
+```sh
+python3 script/audit/genwordmark.py      # -> {"width":264,"weak":...,"left":...,"right":...}
+```
+
+Emit one path per layer, each a union of horizontally merged cell runs so
+adjacent cells cannot seam. Thirteen places carry the wordmark — two source files
+plus eleven standalone SVGs — and two of those SVGs also have a `clipPath` rect
+whose width must be widened, or the last glyph is cropped.
+
+To verify a change, decode the result back to ASCII and read it; do not trust
+generated brand art you have not looked at.
+
 ## Socket-level ground truth
 
 `netspy.ts` misses native fetchers and child processes, so pair it with strace:

@@ -32,44 +32,26 @@ export const Splash = (props: Pick<ComponentProps<"svg">, "ref" | "class">) => {
 }
 
 /**
- * STALE ASSET: the path data below still spells "opencode".
+ * Wordmark: "alphacode" in the same 4x7 pixel font as before - 6px cells, 9
+ * glyphs at a 30px pitch (viewBox 264 = 8*30 + 24). o/p/e/c/d keep their
+ * original letterforms; a, l and h are new and match the terminal font in
+ * packages/tui/src/logo.ts.
  *
- * It is a 4x5 pixel font on a 6px grid, 8 glyphs at a 30px pitch (viewBox 234 =
- * 7*30 + 24). Rendering "alphacode" needs 9 glyphs (viewBox 264) and three new
- * letterforms (a, l, h). That is a design change, not a rename, and it is not
- * something to generate blind - so it is flagged here rather than guessed at.
- *
- * The terminal wordmark (packages/tui/src/logo.ts) has been redrawn and is
- * correct; this is the vector one used by the web and desktop UIs.
- *
- * `aria-label` intentionally says AlphaCode: screen-reader users should get the
- * product name, not the stale raster.
+ * Three layers, as before: a shadow across the whole word, then the ink split
+ * so "alpha" renders dimmer than "code".
  */
 export const Logo = (props: { class?: string }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 234 42"
+      viewBox="0 0 264 42"
       fill="none"
       classList={{ [props.class ?? ""]: !!props.class }}
     >
       <g>
-        <path d="M18 30H6V18H18V30Z" fill="var(--icon-weak-base)" />
-        <path d="M18 12H6V30H18V12ZM24 36H0V6H24V36Z" fill="var(--icon-base)" />
-        <path d="M48 30H36V18H48V30Z" fill="var(--icon-weak-base)" />
-        <path d="M36 30H48V12H36V30ZM54 36H36V42H30V6H54V36Z" fill="var(--icon-base)" />
-        <path d="M84 24V30H66V24H84Z" fill="var(--icon-weak-base)" />
-        <path d="M84 24H66V30H84V36H60V6H84V24ZM66 18H78V12H66V18Z" fill="var(--icon-base)" />
-        <path d="M108 36H96V18H108V36Z" fill="var(--icon-weak-base)" />
-        <path d="M108 12H96V36H90V6H108V12ZM114 36H108V12H114V36Z" fill="var(--icon-base)" />
-        <path d="M144 30H126V18H144V30Z" fill="var(--icon-weak-base)" />
-        <path d="M144 12H126V30H144V36H120V6H144V12Z" fill="var(--icon-strong-base)" />
-        <path d="M168 30H156V18H168V30Z" fill="var(--icon-weak-base)" />
-        <path d="M168 12H156V30H168V12ZM174 36H150V6H174V36Z" fill="var(--icon-strong-base)" />
-        <path d="M198 30H186V18H198V30Z" fill="var(--icon-weak-base)" />
-        <path d="M198 12H186V30H198V12ZM204 36H180V6H198V0H204V36Z" fill="var(--icon-strong-base)" />
-        <path d="M234 24V30H216V24H234Z" fill="var(--icon-weak-base)" />
-        <path d="M216 12V18H228V12H216ZM234 24H216V30H234V36H210V6H234V24Z" fill="var(--icon-strong-base)" />
+        <path d="M66 18H78V24H66ZM96 18H108V24H96ZM156 18H174V24H156ZM186 18H198V24H186ZM216 18H228V24H216ZM6 24H18V30H6ZM66 24H78V30H66ZM96 24H108V30H96ZM126 24H138V30H126ZM156 24H174V30H156ZM186 24H198V30H186ZM216 24H228V30H216ZM246 24H264V30H246ZM96 30H108V36H96Z" fill="var(--icon-weak-base)" />
+        <path d="M30 0H36V6H30ZM90 0H96V6H90ZM0 6H24V12H0ZM30 6H36V12H30ZM60 6H84V12H60ZM90 6H108V12H90ZM120 6H144V12H120ZM0 12H6V18H0ZM18 12H24V18H18ZM30 12H36V18H30ZM60 12H66V18H60ZM78 12H84V18H78ZM90 12H96V18H90ZM108 12H114V18H108ZM120 12H126V18H120ZM138 12H144V18H138ZM0 18H24V24H0ZM30 18H36V24H30ZM60 18H66V24H60ZM78 18H84V24H78ZM90 18H96V24H90ZM108 18H114V24H108ZM120 18H144V24H120ZM0 24H6V30H0ZM18 24H24V30H18ZM30 24H36V30H30ZM60 24H66V30H60ZM78 24H84V30H78ZM90 24H96V30H90ZM108 24H114V30H108ZM120 24H126V30H120ZM138 24H144V30H138ZM0 30H24V36H0ZM30 30H36V36H30ZM60 30H84V36H60ZM90 30H96V36H90ZM108 30H114V36H108ZM120 30H144V36H120ZM60 36H66V42H60Z" fill="var(--icon-base)" />
+        <path d="M228 0H234V6H228ZM150 6H174V12H150ZM180 6H204V12H180ZM210 6H234V12H210ZM240 6H264V12H240ZM150 12H156V18H150ZM180 12H186V18H180ZM198 12H204V18H198ZM210 12H216V18H210ZM228 12H234V18H228ZM240 12H246V18H240ZM258 12H264V18H258ZM150 18H156V24H150ZM180 18H186V24H180ZM198 18H204V24H198ZM210 18H216V24H210ZM228 18H234V24H228ZM240 18H264V24H240ZM150 24H156V30H150ZM180 24H186V30H180ZM198 24H204V30H198ZM210 24H216V30H210ZM228 24H234V30H228ZM240 24H246V30H240ZM150 30H174V36H150ZM180 30H204V36H180ZM210 30H234V36H210ZM240 30H264V36H240Z" fill="var(--icon-strong-base)" />
       </g>
     </svg>
   )

@@ -193,11 +193,6 @@ If you're interested in contributing to AlphaCode, please read our [contributing
 
 ### Known gaps
 
-- The **vector wordmark** used by the web and desktop UIs
-  (`packages/ui/src/components/logo.tsx`, `packages/core/src/oauth/page.ts`)
-  still spells "opencode". It is a pixel font that needs three new letterforms
-  and a wider viewBox — a design change, flagged in the source rather than
-  guessed at. The terminal wordmark *has* been redrawn.
 - Two brand-asset zips and one base64 image fixture still contain the old name
   inside their bytes.
 - `packages/desktop`, `packages/console`, `packages/stats` and `packages/web`

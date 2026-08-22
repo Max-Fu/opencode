@@ -4,8 +4,6 @@ import copyLogoLight from "../asset/lander/logo-light.svg"
 import copyLogoDark from "../asset/lander/logo-dark.svg"
 import copyWordmarkLight from "../asset/lander/wordmark-light.svg"
 import copyWordmarkDark from "../asset/lander/wordmark-dark.svg"
-import copyBrandAssetsLight from "../asset/lander/brand-assets-light.svg"
-import copyBrandAssetsDark from "../asset/lander/brand-assets-dark.svg"
 
 // SVG files for copying (separate from button icons)
 // Replace these with your actual SVG files for copying
@@ -132,11 +130,6 @@ export function Header(props: { zen?: boolean; go?: boolean; hideGetStarted?: bo
             <img data-slot="copy light" src={copyWordmarkLight} alt="" />
             <img data-slot="copy dark" src={copyWordmarkDark} alt="" />
             {i18n.t("nav.context.copyWordmark")}
-          </button>
-          <button class="context-menu-item" onClick={() => navigate(language.route("/brand"))}>
-            <img data-slot="copy light" src={copyBrandAssetsLight} alt="" />
-            <img data-slot="copy dark" src={copyBrandAssetsDark} alt="" />
-            {i18n.t("nav.context.brandAssets")}
           </button>
         </div>
       </Show>

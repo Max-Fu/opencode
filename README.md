@@ -193,8 +193,6 @@ If you're interested in contributing to AlphaCode, please read our [contributing
 
 ### Known gaps
 
-- Two brand-asset zips and one base64 image fixture still contain the old name
-  inside their bytes.
 - `packages/desktop`, `packages/console`, `packages/stats` and `packages/web`
   are upstream's product surfaces. They are renamed but unmaintained here, and
   their configs still reference hosts that do not exist.
